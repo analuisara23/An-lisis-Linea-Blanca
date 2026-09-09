@@ -1,0 +1,838 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Diagnóstico Línea Blanca</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;700;800&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap">
+<style>
+  :root{
+    color-scheme: light;
+    --paper:#F5F7FA;
+    --surface:#FFFFFF;
+    --surface-2:#EDF2F8;
+    --border:#DCE3EC;
+    --ink:#16233D;
+    --ink-2:#4B5768;
+    --ink-3:#7C8798;
+    --navy:#1F3864;
+    --navy-ink:#0F1B33;
+    --accent:#2A78D6;
+    --accent-soft:#E3EEFB;
+    --risk:#C23B3B;
+    --risk-soft:#F7E7E5;
+    --good:#1E7B34;
+    --good-soft:#E4F0E7;
+    --cat-2:#EB6834;
+    --cat-3:#1BAF7A;
+    --cat-4:#EDA100;
+    --cat-otros:#9AA5B4;
+    --shadow: 0 1px 2px rgba(15,27,51,.04), 0 8px 24px -12px rgba(15,27,51,.18);
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      color-scheme: dark;
+      --paper:#0D1524;
+      --surface:#141F35;
+      --surface-2:#1B2A46;
+      --border:#293A5C;
+      --ink:#E9EDF5;
+      --ink-2:#AEB9CC;
+      --ink-3:#7E8CA3;
+      --navy:#B9CDEC;
+      --navy-ink:#DCE6F6;
+      --accent:#5B9BE0;
+      --accent-soft:#1B2E4C;
+      --risk:#E2725A;
+      --risk-soft:#3A2420;
+      --good:#4CAF6D;
+      --good-soft:#1C3324;
+      --cat-2:#D95926;
+      --cat-3:#199E70;
+      --cat-4:#C98500;
+      --cat-otros:#5B6472;
+      --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 24px -12px rgba(0,0,0,.5);
+    }
+  }
+  :root[data-theme="dark"]{
+    color-scheme: dark;
+    --paper:#0D1524; --surface:#141F35; --surface-2:#1B2A46; --border:#293A5C;
+    --ink:#E9EDF5; --ink-2:#AEB9CC; --ink-3:#7E8CA3; --navy:#B9CDEC; --navy-ink:#DCE6F6;
+    --accent:#5B9BE0; --accent-soft:#1B2E4C; --risk:#E2725A; --risk-soft:#3A2420;
+    --good:#4CAF6D; --good-soft:#1C3324; --cat-2:#D95926; --cat-3:#199E70; --cat-4:#C98500; --cat-otros:#5B6472;
+    --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 24px -12px rgba(0,0,0,.5);
+  }
+
+  *{box-sizing:border-box;}
+  body{
+    margin:0; background:var(--paper); color:var(--ink);
+    font-family:"IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
+    font-size:14px; line-height:1.5; -webkit-font-smoothing:antialiased;
+  }
+  h1,h2,h3,.disp{ font-family:"Archivo", ui-sans-serif, system-ui, sans-serif; text-wrap:balance; color:var(--ink); margin:0; }
+  .mono, .num{ font-family:"IBM Plex Mono", ui-monospace, "SF Mono", monospace; font-variant-numeric: tabular-nums; }
+  .eyebrow{ font-family:"IBM Plex Sans", sans-serif; font-weight:600; font-size:11px; letter-spacing:.09em; text-transform:uppercase; color:var(--ink-3); }
+  a{color:var(--accent);}
+
+  .wrap{max-width:1180px; margin:0 auto; padding:0 24px 64px;}
+
+  .topbar{
+    position:sticky; top:0; z-index:40;
+    background:var(--navy-ink);
+    background-image: linear-gradient(160deg, var(--navy-ink) 0%, #16233D 100%);
+    border-bottom:1px solid rgba(255,255,255,.08);
+  }
+  .topbar-inner{
+    max-width:1180px; margin:0 auto; padding:16px 24px;
+    display:flex; align-items:center; justify-content:space-between; gap:20px; flex-wrap:wrap;
+  }
+  .brand{display:flex; align-items:center; gap:12px;}
+  .brand-mark{
+    width:34px; height:34px; border-radius:8px;
+    background: linear-gradient(135deg, var(--accent), #1B4E8C);
+    display:flex; align-items:center; justify-content:center;
+    color:#fff; font-family:"Archivo",sans-serif; font-weight:800; font-size:15px; flex:none;
+  }
+  .brand-text h1{color:#fff; font-size:17px; font-weight:700; letter-spacing:-.01em;}
+  .brand-text p{margin:1px 0 0; color:rgba(255,255,255,.62); font-size:12px;}
+
+  .filterbar{display:flex; align-items:center; gap:10px; flex-wrap:wrap;}
+  .filterbar .flabel{color:rgba(255,255,255,.55); font-size:11px; font-weight:600; letter-spacing:.06em; text-transform:uppercase;}
+  .segmented{ display:flex; gap:2px; padding:3px; background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.10); border-radius:10px; flex-wrap:wrap; }
+  .seg-btn{
+    appearance:none; border:none; cursor:pointer; padding:6px 12px; border-radius:7px;
+    font-family:"IBM Plex Sans", sans-serif; font-size:12.5px; font-weight:600;
+    color:rgba(255,255,255,.72); background:transparent; transition: background .15s ease, color .15s ease;
+  }
+  .seg-btn:hover{color:#fff;}
+  .seg-btn:focus-visible{outline:2px solid #fff; outline-offset:1px;}
+  .seg-btn[aria-pressed="true"]{ background:#fff; color:var(--navy-ink); }
+
+  main{padding-top:28px;}
+  section{margin-bottom:34px;}
+  .section-head{display:flex; align-items:baseline; justify-content:space-between; gap:12px; margin-bottom:14px; flex-wrap:wrap;}
+  .section-head h2{font-size:16px; font-weight:700;}
+  .section-note{color:var(--ink-3); font-size:12px; max-width:520px;}
+
+  .narrative{display:grid; grid-template-columns:1fr 1fr; gap:16px;}
+  @media (max-width:760px){ .narrative{grid-template-columns:1fr;} }
+  .ncard{
+    border-radius:14px; padding:20px 22px; border:1px solid var(--border); background:var(--surface);
+    box-shadow:var(--shadow); display:flex; flex-direction:column; gap:8px;
+  }
+  .ncard .tag{ display:inline-flex; align-items:center; gap:7px; width:fit-content; padding:4px 10px 4px 8px; border-radius:999px; font-size:11px; font-weight:700; letter-spacing:.04em; text-transform:uppercase; }
+  .tag-dot{width:7px; height:7px; border-radius:50%;}
+  .ncard.good .tag{background:var(--good-soft); color:var(--good);}
+  .ncard.good .tag-dot{background:var(--good);}
+  .ncard.risk .tag{background:var(--risk-soft); color:var(--risk);}
+  .ncard.risk .tag-dot{background:var(--risk);}
+  .ncard h3{font-size:16.5px; font-weight:700; margin-top:2px;}
+  .ncard p{margin:0; color:var(--ink-2); font-size:13.2px; line-height:1.55;}
+  .ncard .zstat{margin-top:4px; font-size:12.5px; color:var(--ink-3);}
+  .ncard .zstat b{color:var(--ink); font-weight:600;}
+  .balance-line{ grid-column:1 / -1; display:flex; align-items:center; gap:10px; font-size:11.5px; color:var(--ink-3); margin-top:-4px; }
+  .balance-line::before, .balance-line::after{content:""; flex:1; height:1px; background:var(--border);}
+
+  .kpis{ display:grid; grid-template-columns:repeat(5, 1fr); gap:12px; }
+  @media (max-width:900px){ .kpis{grid-template-columns:repeat(2,1fr);} }
+  .kpi{ background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:14px 16px; box-shadow:var(--shadow); display:flex; flex-direction:column; gap:6px; }
+  .kpi .klabel{font-size:11px; color:var(--ink-3); font-weight:600; letter-spacing:.02em;}
+  .kpi .kval{font-size:21px; font-weight:600; color:var(--ink); letter-spacing:-.01em;}
+  .kpi .ksub{font-size:11.5px; color:var(--ink-3);}
+  .kpi .ksub.warn{color:var(--risk);}
+  .kpi .ksub.ok{color:var(--good);}
+
+  .charts{display:grid; grid-template-columns:1fr 1fr; gap:16px; align-items:stretch;}
+  @media (max-width:900px){ .charts{grid-template-columns:1fr;} }
+  .panel{ background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:18px 20px 16px; box-shadow:var(--shadow); display:flex; flex-direction:column; }
+  .panel-head{display:flex; justify-content:space-between; align-items:flex-start; gap:10px; margin-bottom:6px;}
+  .panel-head h3{font-size:14px; font-weight:700;}
+  .panel-head .phint{font-size:11.5px; color:var(--ink-3); margin-top:2px; max-width:340px;}
+  .legend{display:flex; gap:14px; flex-wrap:wrap; margin-top:8px; font-size:11.5px; color:var(--ink-2);}
+  .legend .litem{display:flex; align-items:center; gap:6px;}
+  .legend .lswatch{width:10px; height:10px; border-radius:3px; flex:none;}
+  .legend .lline{width:14px; height:2px; border-radius:2px; flex:none;}
+
+  svg text{font-family:"IBM Plex Sans", sans-serif;}
+  .axis-label{font-size:10.5px; fill:var(--ink-3);}
+  .grid-line{stroke:var(--border); stroke-width:1;}
+  .cat-year{font-size:11px; fill:var(--ink-2); font-weight:600;}
+  .aun-val{font-size:10px; fill:var(--ink-3); font-family:"IBM Plex Mono", monospace;}
+
+  .conv-line{fill:none; stroke:var(--accent); stroke-width:2.25; stroke-linecap:round; stroke-linejoin:round;}
+  .conv-dot{fill:var(--accent); stroke:var(--surface); stroke-width:2;}
+  .conv-val{font-size:11px; font-weight:700; fill:var(--accent); font-family:"IBM Plex Mono", monospace;}
+  .venta-total-line{fill:none; stroke:var(--ink-3); stroke-width:2.25; stroke-linecap:round; stroke-linejoin:round;}
+  .venta-total-dot{fill:var(--ink-3); stroke:var(--surface); stroke-width:2;}
+  .venta-credito-line{fill:none; stroke:var(--accent); stroke-width:2.25; stroke-linecap:round; stroke-linejoin:round;}
+  .venta-credito-dot{fill:var(--accent); stroke:var(--surface); stroke-width:2;}
+
+  .hoverline{stroke:var(--ink-3); stroke-width:1; stroke-dasharray:2 3; opacity:0;}
+  .tooltip{
+    position:absolute; pointer-events:none; z-index:30; background:var(--navy-ink); color:#fff; border-radius:9px;
+    padding:9px 11px; font-size:11.5px; line-height:1.5; box-shadow:0 8px 20px -6px rgba(0,0,0,.4);
+    opacity:0; transform:translate(-50%,-100%); transition:opacity .1s ease; white-space:nowrap;
+  }
+  .tooltip b{font-family:"IBM Plex Mono",monospace;}
+  .chart-holder{position:relative; flex:1; min-height:210px;}
+
+  .ticket-panel{ background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:20px 22px; box-shadow:var(--shadow); }
+  .ticket-top{display:flex; justify-content:space-between; gap:16px; align-items:flex-start; flex-wrap:wrap; margin-bottom:14px;}
+  .ticket-top h3{font-size:15px; font-weight:700;}
+  .fixed-pill{
+    display:inline-flex; align-items:center; gap:6px; background:var(--surface-2); color:var(--ink-3);
+    border:1px solid var(--border); border-radius:999px; padding:4px 10px; font-size:10.5px; font-weight:600; letter-spacing:.03em; text-transform:uppercase;
+  }
+  .ticket-grid{display:grid; grid-template-columns:1fr 1fr; gap:22px;}
+  @media (max-width:760px){ .ticket-grid{grid-template-columns:1fr;} }
+  .tchart h4{font-size:12px; font-weight:600; color:var(--ink-2); margin:0 0 10px;}
+  .tbar-row{display:flex; align-items:center; gap:10px; margin-bottom:9px;}
+  .tbar-name{width:185px; flex:none; font-size:12px; font-weight:600; color:var(--ink); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  .tbar-track{flex:1; height:16px; border-radius:5px; background:var(--surface-2); position:relative; overflow:hidden;}
+  .tbar-fill{height:100%; border-radius:5px;}
+  .tbar-mark{position:absolute; top:-2px; width:2px; height:20px; background:var(--risk);}
+  .tbar-val{width:118px; flex:none; text-align:right; font-size:12px; color:var(--ink-2);}
+  .ticket-callout{ margin-top:16px; padding:12px 14px; border-radius:10px; background:var(--accent-soft); border:1px solid var(--border); font-size:12.5px; color:var(--ink-2); line-height:1.55; }
+  .ticket-callout b{color:var(--ink);}
+  .tbar-zona{color:var(--ink-3); font-weight:400;}
+
+  .strategy-grid{display:grid; grid-template-columns:1fr 1fr; gap:14px; align-items:start;}
+  @media (max-width:760px){ .strategy-grid{grid-template-columns:1fr;} }
+  .scard{
+    background:var(--surface); border:1px solid var(--border); border-left:3px solid var(--sbar);
+    border-radius:12px; padding:16px 18px; box-shadow:var(--shadow); display:flex; flex-direction:column; gap:6px;
+  }
+  .scard .spill{ display:inline-flex; width:fit-content; align-items:center; padding:3px 9px; border-radius:999px; background:var(--surface-2); font-size:10.5px; font-weight:700; letter-spacing:.04em; text-transform:uppercase; color:var(--ink-3); }
+  .scard h4{font-size:14.5px; font-weight:700; color:var(--ink); margin:2px 0 0;}
+  .scard p{margin:0; font-size:12.8px; color:var(--ink-2); line-height:1.55;}
+
+  .indicator-panel{ background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:18px 20px; box-shadow:var(--shadow); }
+  .ind-table{width:100%; border-collapse:collapse;}
+  .ind-table th{ text-align:left; font-size:11px; font-weight:700; letter-spacing:.03em; text-transform:uppercase; color:var(--ink-3); padding:0 10px 8px 0; border-bottom:1px solid var(--border); }
+  .ind-table td{ font-size:12.8px; color:var(--ink-2); padding:10px 10px 10px 0; border-bottom:1px solid var(--border); vertical-align:top; line-height:1.5; }
+  .ind-table tr:last-child td{border-bottom:none;}
+  .ind-table td:first-child{font-weight:600; color:var(--ink); white-space:nowrap;}
+  .ind-note{margin-top:12px; font-size:11.5px; color:var(--ink-3);}
+
+  footer{ border-top:1px solid var(--border); padding-top:16px; margin-top:8px; color:var(--ink-3); font-size:11.5px; line-height:1.6; }
+  footer .fname{color:var(--ink-2); font-weight:600; margin-top:4px;}
+
+  @media (prefers-reduced-motion: reduce){ *{transition:none !important;} }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-inner">
+    <div class="brand">
+      <div class="brand-mark">L</div>
+      <div class="brand-text">
+        <h1>Diagnóstico Línea Blanca</h1>
+        <p>Conversión a crédito · captación y fidelización · Comercial y Mercado</p>
+      </div>
+    </div>
+    <div class="filterbar">
+      <span class="flabel">Zona</span>
+      <div class="segmented" id="zonaFilter" role="group" aria-label="Filtrar por zona"></div>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+  <main>
+
+    <section class="narrative">
+      <div class="ncard good">
+        <span class="tag"><span class="tag-dot"></span>Negocio en expansión</span>
+        <h3>La venta de Línea Blanca crece con fuerza, sin señales de desaceleración</h3>
+        <p>Ene-Ago 2026 ya supera en volumen a todo 2023 y se acerca al total de 2025 — la base de clientes y el número de ventas siguen en aumento año tras año. LITORAL es la única zona que además sostuvo su conversión a crédito en el último año.</p>
+        <div class="zstat" id="goodZoneStat"></div>
+      </div>
+      <div class="ncard risk">
+        <span class="tag"><span class="tag-dot"></span>Alerta de conversión a crédito</span>
+        <h3>La conversión a crédito cae de forma generalizada, no aislada</h3>
+        <p>22 de 26 tiendas y 5 de 6 zonas muestran menor conversión a crédito en Ene-Ago 2026 que en el mismo período de 2025 — un patrón sistémico, no un problema de una tienda o un vendedor en particular.</p>
+        <div class="zstat" id="riskZoneStat"></div>
+      </div>
+      <div class="balance-line">Ninguna lectura anula a la otra — ambas conviven con el mismo peso en el diagnóstico</div>
+    </section>
+
+    <section class="kpis" id="kpiStrip" aria-label="Indicadores clave"></section>
+
+    <section class="charts">
+      <div class="panel">
+        <div class="panel-head">
+          <div>
+            <h3>Conversión a crédito por año</h3>
+            <div class="phint">% de la venta (Ene-Ago de cada año) que se financió a crédito, sobre el monto total vendido — línea blanca únicamente. 2026 es parcial, a agosto.</div>
+          </div>
+        </div>
+        <div class="chart-holder" id="chartConvHolder">
+          <svg id="chartConv" viewBox="0 0 480 220" preserveAspectRatio="xMidYMid meet"></svg>
+          <div class="tooltip" id="ttConv"></div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head">
+          <div>
+            <h3>Venta total vs. venta a crédito, por año</h3>
+            <div class="phint">Monto vendido cada Ene-Ago: la línea gris es toda la venta, la azul es solo la parte financiada a crédito.</div>
+          </div>
+        </div>
+        <div class="chart-holder" id="chartVentaHolder">
+          <svg id="chartVenta" viewBox="0 0 480 220" preserveAspectRatio="xMidYMid meet"></svg>
+          <div class="tooltip" id="ttVenta"></div>
+        </div>
+        <div class="legend">
+          <div class="litem"><span class="lline" style="background:var(--ink-3)"></span>Venta total</div>
+          <div class="litem"><span class="lline" style="background:var(--accent)"></span>Venta a crédito</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel" id="volumenPanel">
+      <div class="panel-head">
+        <div>
+          <h3>Volumen de ventas por año</h3>
+          <div class="phint">Cuántas ventas de Línea Blanca se hicieron cada año (2021-2026; 2026 es un año parcial, a agosto).</div>
+        </div>
+      </div>
+      <div class="chart-holder" id="chartVolHolder" style="min-height:150px;">
+        <svg id="chartVol" viewBox="0 0 980 150" preserveAspectRatio="xMidYMid meet"></svg>
+        <div class="tooltip" id="ttVol"></div>
+      </div>
+    </section>
+
+    <section class="panel" id="mesPanel">
+      <div class="panel-head">
+        <div>
+          <h3>Volumen mensual de ventas</h3>
+          <div class="phint">Ventas por mes, ene-2023 a ago-2026 — todas las zonas juntas, no cambia con el filtro de arriba. El crecimiento general domina la serie, pero hay un patrón estacional real dentro de cada año.</div>
+        </div>
+      </div>
+      <div class="chart-holder" id="chartMesHolder" style="min-height:150px;">
+        <svg id="chartMes" viewBox="0 0 980 150" preserveAspectRatio="xMidYMid meet"></svg>
+        <div class="tooltip" id="ttMes"></div>
+      </div>
+      <div class="section-note" style="max-width:720px;margin-top:8px;">Comparando la participación de cada mes dentro de su propio año (para aislar el efecto del crecimiento), <b>mayo</b> y <b>diciembre</b> son consistentemente los meses más altos en 2024 y 2025, y <b>febrero</b> el más bajo — con solo 3 años de historia, vale la pena confirmar este patrón cuando cierre 2026.</div>
+    </section>
+
+    <section class="charts">
+      <div class="panel">
+        <div class="panel-head">
+          <div>
+            <h3>Conversión por tienda</h3>
+            <div class="phint">Ene-Ago 2026, ordenadas por venta. Las 3 de mayor volumen (marca roja = conversión 2025 de referencia) concentran ≈30% de toda la venta y tienen la conversión más baja.</div>
+          </div>
+        </div>
+        <div id="tiendaBars"></div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head">
+          <div>
+            <h3>Conversión por subcategoría de producto</h3>
+            <div class="phint">Top 12 por venta, Ene-Ago 2026. Marca roja = conversión 2025, para ver la caída de un vistazo.</div>
+          </div>
+        </div>
+        <div id="prodBars"></div>
+      </div>
+    </section>
+
+    <section>
+      <div class="section-head">
+        <h2>Fidelización: el cliente recurrente frente al de una sola compra</h2>
+        <div class="section-note">Histórico 2021-2026, vista consolidada — no cambia con el filtro de zona. "Recurrente" = 2 o más compras.</div>
+      </div>
+      <div class="indicator-panel">
+        <table class="ind-table" id="fidTable"></table>
+        <div class="ind-note">Mora e incidencia de mora calculadas a nivel transacción de crédito, no a nivel cliente, para no favorecer artificialmente al recurrente por tener más compras (más oportunidades de mora).</div>
+      </div>
+      <div class="ticket-callout" style="margin-top:14px;">
+        <b>El cliente recurrente es a la vez más rentable y mejor riesgo:</b> 26.9% de los clientes ha comprado 2+ veces y genera 52.4% de toda la venta, financia más de sus compras (50.5% vs. 39.2%) y cae menos en mora (7.6% vs. 12.4% de sus transacciones de crédito). La mediana entre 1ra y 2da compra es de 116 días, y 78% recompra dentro de 1 año.
+      </div>
+
+      <h3 style="font-size:14px;font-weight:700;color:var(--ink);margin:24px 0 4px;">La decisión de crédito se fija en la primera compra, no después</h3>
+      <div class="section-note" style="max-width:660px;margin-bottom:12px;">De los 19,793 clientes recurrentes con 1ra y 2da compra registrada — qué tan probable es que cambien de método de pago entre una compra y la siguiente.</div>
+      <div class="kpis" style="grid-template-columns:1fr 1fr;">
+        <div class="kpi">
+          <div class="klabel">Empezó en CONTADO → usa crédito en su 2da compra</div>
+          <div class="kval num" style="color:var(--risk);">16.6%</div>
+          <div class="ksub">de 9,606 clientes — 5 de cada 6 se quedan en contado</div>
+        </div>
+        <div class="kpi">
+          <div class="klabel">Empezó en CRÉDITO → sigue en crédito en su 2da compra</div>
+          <div class="kval num" style="color:var(--good);">82.0%</div>
+          <div class="ksub">de 10,187 clientes — casi todos se quedan</div>
+        </div>
+      </div>
+      <div class="ticket-callout" style="margin-top:14px;">
+        El crédito es "pegajoso" desde la primera transacción, no algo que se gana con el tiempo. Si el cliente empieza pagando contado, es poco probable que cambie después; si empieza financiando, casi siempre se queda. El mayor apalancamiento no está en reintentar con quien ya compró en contado — está en ganar la decisión de crédito en la primera compra que hace un cliente nuevo en tienda.
+      </div>
+    </section>
+
+    <section>
+      <div class="ticket-panel">
+        <div class="ticket-top">
+          <div>
+            <h3>Canasta grande, la que menos se financia</h3>
+            <div class="section-note">Personas naturales. La conversión sube de 1 a 2 productos por venta — y luego cae, justo cuando el ticket promedio se dispara.</div>
+          </div>
+          <span class="fixed-pill">Vista consolidada · no cambia con el filtro de zona</span>
+        </div>
+        <div class="tchart">
+          <h4>% Conversión a crédito por # de productos en la venta</h4>
+          <div id="canastaBars"></div>
+        </div>
+        <div class="ticket-callout">
+          Las compras de mayor valor —de L.10,573 en promedio con 1 producto a L.87,639 con 6— son las que menos se están financiando: la conversión cae de 56.96% (2 productos) a 40.98% (5 productos). Es el segmento donde el financiamiento tendría más impacto en el ticket, y hoy es el más desatendido.
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <div class="section-head">
+        <h2>Cobertura de tiendas por zona</h2>
+        <div class="section-note">Ene-Ago 2026. Las zonas con muy pocas tiendas (OCCIDENTE, LITORAL, ORIENTE: 1-2 tiendas) pueden verse artificialmente muy productivas o muy débiles — se leen con cautela.</div>
+      </div>
+      <div class="indicator-panel">
+        <table class="ind-table" id="coberturaTable"></table>
+        <div class="ind-note">CENTRO y NORTE concentran la red (10 y 9 tiendas respectivamente) y sostienen el volumen de la operación; el resto de zonas opera con 1-2 tiendas, insuficiente para comparar "productividad por tienda" con la misma confianza que en una red más grande.</div>
+      </div>
+    </section>
+
+    <section>
+      <div class="section-head">
+        <h2>¿Es alcanzable una meta de 60% de conversión?</h2>
+        <div class="section-note">Simulación sobre la venta real de Ene-Ago 2026 — qué conversión resultaría de mejorar distintos subconjuntos de la red.</div>
+      </div>
+      <div class="indicator-panel">
+        <table class="ind-table">
+          <thead><tr><th>Escenario</th><th>Conversión resultante</th><th>Δ vs. actual (43.2%)</th></tr></thead>
+          <tbody>
+            <tr><td>Las 3 tiendas de mayor volumen suben al promedio de la red (43%)</td><td>47.0%</td><td>+3.9 pts</td></tr>
+            <tr><td>Todas las tiendas por debajo del promedio suben al promedio</td><td>48.0%</td><td>+4.8 pts</td></tr>
+            <tr><td>Las 3 tiendas de mayor volumen llegan a 60% (su mejor cifra histórica jamás)</td><td>52.1%</td><td>+8.9 pts</td></tr>
+            <tr><td>Las 3 grandes a 55% <b>+</b> el resto de la red entera sube 5 puntos parejo</td><td>54.1%</td><td>+10.9 pts</td></tr>
+            <tr><td>Toda la red, sin excepción, converge a 60%</td><td><b style="color:var(--risk)">60.0%</b></td><td>+16.8 pts</td></tr>
+          </tbody>
+        </table>
+        <div class="ind-note">Simulación redistribuyendo el monto financiado sobre la venta real de Ene-Ago 2026 (L.373.5M) según cada escenario — son fotos de "qué pasaría si", no proyecciones de tendencia.</div>
+      </div>
+      <div class="ticket-callout" style="margin-top:14px;">
+        <b>Nunca, en ningún año de esta base (2021-2026), la red completa ha superado 51.9%</b> (el pico fue en 2024). Incluso arreglando por completo el problema más grande de este diagnóstico —las 3 tiendas de mayor volumen, hoy en 28-35%— el blended solo llega a ~52%. Llegar a 60% requeriría que prácticamente toda la red operara al nivel de la mejor tienda actual (El Progreso, 64.6%, pero pequeña: L.9.7M de venta) — no es un ajuste táctico, es un negocio distinto. Recomendamos fijar 50-52% (recuperar el pico de 2024) como meta de corto plazo, y tratar 60% como aspiracional, sujeto a un cambio estructural (producto de crédito distinto o cambio de política de aprobación) más que a optimización de lo actual.
+      </div>
+    </section>
+
+    <section>
+      <div class="section-head">
+        <h2>Estrategias recomendadas</h2>
+        <div class="section-note">Tres frentes concretos, cada uno nacido de un hallazgo real de este diagnóstico.</div>
+      </div>
+      <div class="strategy-grid">
+        <div class="scard" style="--sbar:var(--cat-3)">
+          <span class="spill">Captación</span>
+          <h4>Ofertar crédito específicamente para canastas de 3+ productos</h4>
+          <p>Es el segmento de mayor ticket y mayor caída de conversión relativa. Pilotear en Multiplaza Tegucigalpa o Boulevard —alto volumen, baja conversión— antes de escalar a toda la red.</p>
+        </div>
+        <div class="scard" style="--sbar:var(--risk)">
+          <span class="spill">Riesgo de tienda</span>
+          <h4>Investigar la caída abrupta en tiendas puntuales</h4>
+          <p>Comayagua San Miguel (-15.8 pts), Choluteca 3 (-15.7 pts) y Altara SPS (-14.5 pts) cayeron de 55-70% a 38-47% en un año — una caída así de abrupta no se explica solo con tendencia de mercado.</p>
+        </div>
+        <div class="scard" style="--sbar:var(--good); grid-column:1 / -1;">
+          <span class="spill">Fidelización</span>
+          <h4>Ganar la primera compra, no perseguir la segunda</h4>
+          <p>El crédito se decide casi todo en la primera transacción: quien empieza en contado casi nunca se cambia después (16.6%), pero quien empieza en crédito se queda (82.0%). Eso cambia dónde poner el esfuerzo. Tres pasos concretos: <b>1)</b> bajar la barrera de aprobación específicamente en la primera compra de un cliente nuevo — es el momento que más pesa en su comportamiento futuro, más que insistir después; <b>2)</b> al cliente que ya financió una vez, subir línea o mejorar tasa de forma progresiva — ya demostró ser buen pagador (7.6% de mora vs. 12.4%); <b>3)</b> una oferta de crédito preaprobado para los 4,463 clientes que ya usaron ambos canales — Solvenza ya los conoce.</p>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <div class="section-head">
+        <h2>Indicadores para seguimiento mensual</h2>
+        <div class="section-note">Los números que más vale la pena revisar cada mes — corte sugerido dentro de los primeros 5 días hábiles, a cargo de Comercial y Mercado.</div>
+      </div>
+      <div class="indicator-panel">
+        <table class="ind-table">
+          <thead><tr><th>Indicador</th><th>Qué vigilar</th><th>Pregunta que responde</th></tr></thead>
+          <tbody>
+            <tr><td>Conversión a crédito del mes</td><td>Si la caída sostenida desde 2024 (pico de 51.9%) continúa, se frena o se revierte.</td><td>¿Seguimos cayendo en conversión, o ya tocamos piso?</td></tr>
+            <tr><td>Conversión en canastas de 3+ productos</td><td>Si la oferta de crédito dirigida a canastas grandes (Estrategia de Captación) está moviendo la aguja.</td><td>¿Está funcionando la oferta de crédito para canastas grandes?</td></tr>
+            <tr><td>Conversión de las 3 tiendas de mayor volumen</td><td>Próceres SPS, Boulevard y Multiplaza Tegucigalpa concentran ≈30% de la venta — su recuperación pesa más que cualquier otra tienda.</td><td>¿Están mejorando las tiendas que más pesan en el total?</td></tr>
+            <tr><td>% de clientes recurrentes del mes</td><td>Tendencia frente a la base actual de 26.9% — valida si la fidelización avanza.</td><td>¿Crece la proporción de clientes que repiten compra?</td></tr>
+            <tr><td>Mora de recurrentes vs. una sola compra</td><td>Que la brecha de riesgo (7.6% vs. 12.4%) se mantenga o se cierre conforme crece la base de crédito.</td><td>¿El cliente recurrente sigue siendo mejor riesgo al escalar la estrategia?</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <footer>
+      <div>Fuente y metodología: Linea_blanca_base_1.xlsx (Sociedad 1400, LineaMacroJs = LINEA BLANCA), 131,949 líneas de producto depuradas en 106,140 ventas únicas (venta_id = contrato para crédito, factura para contado — ver detalle en LineaBlanca_Analisis.xlsx) y 73,679 clientes únicos. Cobertura ene-2021–ago-2026; 2026 es un año parcial. Zona_General y el resto de definiciones en la hoja Notas_Metodologicas del archivo de análisis. Alcance 100% interno, sin comparación con competencia.</div>
+      <div class="fname">Preparado por Análisis de Estrategia de Negocios — Comercial y Mercado · 9 de septiembre de 2026</div>
+    </footer>
+
+  </main>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  var COMBINED = {"zonas": ["CENTRO", "NORTE", "SUR", "OCCIDENTE", "LITORAL", "ORIENTE"], "zonaData": {"TODAS": {"kpis": {"n_ventas": 29666, "delta_n_ventas": 0.3904199475065617, "venta_total": 373513340.01, "venta_financiada": 161209983.85, "pct_conversion": 0.4316043540658654, "delta_conversion": -0.05273084584148602, "ticket_promedio": 12590.620238994134}, "convyr": [{"anio": 2023, "n_ventas": 3914, "n_credito": 1849, "pct_conversion": 0.46505600964860605, "venta_total": 60409870.16, "venta_credito": 28093973.159999996}, {"anio": 2024, "n_ventas": 16785, "n_credito": 8561, "pct_conversion": 0.518626132398345, "venta_total": 225649702.8, "venta_credito": 117027832.64}, {"anio": 2025, "n_ventas": 21336, "n_credito": 9821, "pct_conversion": 0.4843351999073514, "venta_total": 276221400.81, "venta_credito": 133783747.38}, {"anio": 2026, "n_ventas": 29666, "n_credito": 11934, "pct_conversion": 0.4316043540658654, "venta_total": 373513340.01, "venta_credito": 161209983.85}], "volumen": [{"anio": 2021, "ventas": 277}, {"anio": 2022, "ventas": 253}, {"anio": 2023, "ventas": 13119}, {"anio": 2024, "ventas": 27229}, {"anio": 2025, "ventas": 35596}, {"anio": 2026, "ventas": 29666}]}, "CENTRO": {"kpis": {"n_ventas": 14421, "delta_n_ventas": 0.4036402569593147, "venta_total": 180266970.5, "venta_financiada": 70002279.1, "pct_conversion": 0.38832559789426313, "delta_conversion": -0.03007778049606019, "ticket_promedio": 12500.309999306566}, "convyr": [{"anio": 2023, "n_ventas": 1698, "n_credito": 682, "pct_conversion": 0.4059380757910384, "venta_total": 26900655.3, "venta_credito": 10920000.25}, {"anio": 2024, "n_ventas": 7690, "n_credito": 3477, "pct_conversion": 0.4699843507359751, "venta_total": 103750885.5, "venta_credito": 48761292.559999995}, {"anio": 2025, "n_ventas": 10274, "n_credito": 4027, "pct_conversion": 0.4184033783903233, "venta_total": 133199981.33000001, "venta_credito": 55731322.19}, {"anio": 2026, "n_ventas": 14421, "n_credito": 5169, "pct_conversion": 0.38832559789426313, "venta_total": 180266970.5, "venta_credito": 70002279.1}], "volumen": [{"anio": 2021, "ventas": 199}, {"anio": 2022, "ventas": 96}, {"anio": 2023, "ventas": 5911}, {"anio": 2024, "ventas": 12852}, {"anio": 2025, "ventas": 17319}, {"anio": 2026, "ventas": 14421}]}, "NORTE": {"kpis": {"n_ventas": 8838, "delta_n_ventas": 0.3493129770992367, "venta_total": 120224679.27000001, "venta_financiada": 52945318.66, "pct_conversion": 0.4403864412987591, "delta_conversion": -0.06428497723130916, "ticket_promedio": 13603.1544772573}, "convyr": [{"anio": 2023, "n_ventas": 1419, "n_credito": 743, "pct_conversion": 0.4929240422116613, "venta_total": 23362432.33, "venta_credito": 11515904.58}, {"anio": 2024, "n_ventas": 5386, "n_credito": 2907, "pct_conversion": 0.5248276453570883, "venta_total": 78232526.97, "venta_credito": 41058592.92}, {"anio": 2025, "n_ventas": 6550, "n_credito": 3213, "pct_conversion": 0.5046714185300682, "venta_total": 90853854.62, "venta_credito": 45851343.69}, {"anio": 2026, "n_ventas": 8838, "n_credito": 3752, "pct_conversion": 0.4403864412987591, "venta_total": 120224679.27000001, "venta_credito": 52945318.66}], "volumen": [{"anio": 2021, "ventas": 44}, {"anio": 2022, "ventas": 107}, {"anio": 2023, "ventas": 4477}, {"anio": 2024, "ventas": 8548}, {"anio": 2025, "ventas": 10836}, {"anio": 2026, "ventas": 8838}]}, "SUR": {"kpis": {"n_ventas": 2573, "delta_n_ventas": 0.32287917737789207, "venta_total": 28616781.810000002, "venta_financiada": 14647170.65, "pct_conversion": 0.5118384990754486, "delta_conversion": -0.14406542092102392, "ticket_promedio": 11121.951733385155}, "convyr": [{"anio": 2023, "n_ventas": 239, "n_credito": 120, "pct_conversion": 0.5714582753948335, "venta_total": 2827135.68, "venta_credito": 1615590.08}, {"anio": 2024, "n_ventas": 1151, "n_credito": 658, "pct_conversion": 0.6117650370140346, "venta_total": 13149558.120000001, "venta_credito": 8044439.91}, {"anio": 2025, "n_ventas": 1945, "n_credito": 1138, "pct_conversion": 0.6559039199964726, "venta_total": 21645549.58, "venta_credito": 14197400.82}, {"anio": 2026, "n_ventas": 2573, "n_credito": 1187, "pct_conversion": 0.5118384990754486, "venta_total": 28616781.810000002, "venta_credito": 14647170.65}], "volumen": [{"anio": 2021, "ventas": 15}, {"anio": 2022, "ventas": 10}, {"anio": 2023, "ventas": 790}, {"anio": 2024, "ventas": 1787}, {"anio": 2025, "ventas": 3091}, {"anio": 2026, "ventas": 2573}]}, "OCCIDENTE": {"kpis": {"n_ventas": 1489, "delta_n_ventas": 0.7394859813084111, "venta_total": 17711964.47, "venta_financiada": 8705165.86, "pct_conversion": 0.4914850565980161, "delta_conversion": -0.12771650287012615, "ticket_promedio": 11895.207837474814}, "convyr": [{"anio": 2023, "n_ventas": 163, "n_credito": 81, "pct_conversion": 0.5393499586004797, "venta_total": 2070096.46, "venta_credito": 1116506.4399999997}, {"anio": 2024, "n_ventas": 765, "n_credito": 457, "pct_conversion": 0.6441303538013615, "venta_total": 9599833.889999999, "venta_credito": 6183544.4}, {"anio": 2025, "n_ventas": 856, "n_credito": 476, "pct_conversion": 0.6192015594681423, "venta_total": 10248940.370000001, "venta_credito": 6346159.859999999}, {"anio": 2026, "n_ventas": 1489, "n_credito": 617, "pct_conversion": 0.4914850565980161, "venta_total": 17711964.47, "venta_credito": 8705165.86}], "volumen": [{"anio": 2021, "ventas": 8}, {"anio": 2022, "ventas": 8}, {"anio": 2023, "ventas": 612}, {"anio": 2024, "ventas": 1241}, {"anio": 2025, "ventas": 1543}, {"anio": 2026, "ventas": 1489}]}, "LITORAL": {"kpis": {"n_ventas": 1175, "delta_n_ventas": 0.339794754846066, "venta_total": 14752468.329999998, "venta_financiada": 8566822.120000001, "pct_conversion": 0.5807043220407307, "delta_conversion": 0.0001718008884903366, "ticket_promedio": 12555.29219574468}, "convyr": [{"anio": 2023, "n_ventas": 186, "n_credito": 96, "pct_conversion": 0.4929912512988085, "venta_total": 2844270.19, "venta_credito": 1402200.3199999998}, {"anio": 2024, "n_ventas": 779, "n_credito": 508, "pct_conversion": 0.6485532652427795, "venta_total": 10431955.08, "venta_credito": 6765678.53}, {"anio": 2025, "n_ventas": 877, "n_credito": 516, "pct_conversion": 0.5805325211522404, "venta_total": 11777274.9, "venta_credito": 6837091.09}, {"anio": 2026, "n_ventas": 1175, "n_credito": 658, "pct_conversion": 0.5807043220407307, "venta_total": 14752468.329999998, "venta_credito": 8566822.120000001}], "volumen": [{"anio": 2021, "ventas": 6}, {"anio": 2022, "ventas": 26}, {"anio": 2023, "ventas": 598}, {"anio": 2024, "ventas": 1278}, {"anio": 2025, "ventas": 1424}, {"anio": 2026, "ventas": 1175}]}, "ORIENTE": {"kpis": {"n_ventas": 1170, "delta_n_ventas": 0.40287769784172656, "venta_total": 11940475.629999999, "venta_financiada": 6343227.46, "pct_conversion": 0.5312374193924803, "delta_conversion": -0.03615231722162349, "ticket_promedio": 10205.534726495725}, "convyr": [{"anio": 2023, "n_ventas": 209, "n_credito": 127, "pct_conversion": 0.6335110104843502, "venta_total": 2405280.2, "venta_credito": 1523771.49}, {"anio": 2024, "n_ventas": 1014, "n_credito": 554, "pct_conversion": 0.5926865007997888, "venta_total": 10484943.24, "venta_credito": 6214284.32}, {"anio": 2025, "n_ventas": 834, "n_credito": 451, "pct_conversion": 0.5673897366141037, "venta_total": 8495800.010000002, "venta_credito": 4820429.73}, {"anio": 2026, "n_ventas": 1170, "n_credito": 551, "pct_conversion": 0.5312374193924803, "venta_total": 11940475.629999999, "venta_credito": 6343227.46}], "volumen": [{"anio": 2021, "ventas": 5}, {"anio": 2022, "ventas": 6}, {"anio": 2023, "ventas": 731}, {"anio": 2024, "ventas": 1523}, {"anio": 2025, "ventas": 1383}, {"anio": 2026, "ventas": 1170}]}}, "mesSerie": [{"periodo": "2023-01", "ventas": 12}, {"periodo": "2023-02", "ventas": 26}, {"periodo": "2023-03", "ventas": 17}, {"periodo": "2023-04", "ventas": 20}, {"periodo": "2023-05", "ventas": 10}, {"periodo": "2023-06", "ventas": 13}, {"periodo": "2023-07", "ventas": 2014}, {"periodo": "2023-08", "ventas": 1802}, {"periodo": "2023-09", "ventas": 1835}, {"periodo": "2023-10", "ventas": 1777}, {"periodo": "2023-11", "ventas": 2765}, {"periodo": "2023-12", "ventas": 2828}, {"periodo": "2024-01", "ventas": 1980}, {"periodo": "2024-02", "ventas": 1537}, {"periodo": "2024-03", "ventas": 2272}, {"periodo": "2024-04", "ventas": 2033}, {"periodo": "2024-05", "ventas": 2879}, {"periodo": "2024-06", "ventas": 2230}, {"periodo": "2024-07", "ventas": 1885}, {"periodo": "2024-08", "ventas": 1969}, {"periodo": "2024-09", "ventas": 1978}, {"periodo": "2024-10", "ventas": 1799}, {"periodo": "2024-11", "ventas": 2853}, {"periodo": "2024-12", "ventas": 3814}, {"periodo": "2025-01", "ventas": 2511}, {"periodo": "2025-02", "ventas": 2031}, {"periodo": "2025-03", "ventas": 2606}, {"periodo": "2025-04", "ventas": 2275}, {"periodo": "2025-05", "ventas": 3656}, {"periodo": "2025-06", "ventas": 2940}, {"periodo": "2025-07", "ventas": 2696}, {"periodo": "2025-08", "ventas": 2621}, {"periodo": "2025-09", "ventas": 2479}, {"periodo": "2025-10", "ventas": 2608}, {"periodo": "2025-11", "ventas": 4222}, {"periodo": "2025-12", "ventas": 4951}, {"periodo": "2026-01", "ventas": 3505}, {"periodo": "2026-02", "ventas": 2880}, {"periodo": "2026-03", "ventas": 3329}, {"periodo": "2026-04", "ventas": 3190}, {"periodo": "2026-05", "ventas": 5173}, {"periodo": "2026-06", "ventas": 4286}, {"periodo": "2026-07", "ventas": 3724}, {"periodo": "2026-08", "ventas": 3579}], "cobertura": [{"zona": "OCCIDENTE", "tiendas": 1, "ventas": 1489, "venta_monto": 17711964.47, "ventas_por_tienda": 1489.0}, {"zona": "CENTRO", "tiendas": 10, "ventas": 14421, "venta_monto": 180266970.5, "ventas_por_tienda": 1442.1}, {"zona": "SUR", "tiendas": 2, "ventas": 2573, "venta_monto": 28616781.81, "ventas_por_tienda": 1286.5}, {"zona": "NORTE", "tiendas": 9, "ventas": 8838, "venta_monto": 120224679.27, "ventas_por_tienda": 982.0}, {"zona": "LITORAL", "tiendas": 2, "ventas": 1175, "venta_monto": 14752468.33, "ventas_por_tienda": 587.5}, {"zona": "ORIENTE", "tiendas": 2, "ventas": 1170, "venta_monto": 11940475.63, "ventas_por_tienda": 585.0}], "tiendas": [{"cod": 4038, "nombre": "Próceres SPS", "zona": "NORTE", "venta2026": 38072135, "conv2026": 0.2764, "conv2025": 0.3262, "delta": -0.0498, "n": 2205}, {"cod": 4034, "nombre": "Boulevard", "zona": "CENTRO", "venta2026": 37345012, "conv2026": 0.2867, "conv2025": 0.3485, "delta": -0.0618, "n": 2528}, {"cod": 4029, "nombre": "Multiplaza Tegucigalpa", "zona": "CENTRO", "venta2026": 36652010, "conv2026": 0.3477, "conv2025": 0.3764, "delta": -0.0287, "n": 2473}, {"cod": 4214, "nombre": "Sauce", "zona": "CENTRO", "venta2026": 21830547, "conv2026": 0.3609, "conv2025": 0.3238, "delta": 0.0371, "n": 1516}, {"cod": 4037, "nombre": "Puerto Cortés", "zona": "NORTE", "venta2026": 21537940, "conv2026": 0.5616, "conv2025": 0.6185, "delta": -0.0569, "n": 1875}, {"cod": 4033, "nombre": "Las Cascadas", "zona": "CENTRO", "venta2026": 25698278, "conv2026": 0.492, "conv2025": 0.5357, "delta": -0.0437, "n": 2161}, {"cod": 4023, "nombre": "Unimall Choluteca", "zona": "SUR", "venta2026": 18937546, "conv2026": 0.531, "conv2025": 0.6644, "delta": -0.1334, "n": 1724}, {"cod": 4030, "nombre": "City Mall Tegucigalpa", "zona": "CENTRO", "venta2026": 16518868, "conv2026": 0.4209, "conv2025": 0.4157, "delta": 0.0053, "n": 1509}, {"cod": 4032, "nombre": "Metromall", "zona": "CENTRO", "venta2026": 15487138, "conv2026": 0.4803, "conv2025": 0.5087, "delta": -0.0284, "n": 1716}, {"cod": 4036, "nombre": "Megamall SPS", "zona": "NORTE", "venta2026": 15365952, "conv2026": 0.5078, "conv2025": 0.5645, "delta": -0.0567, "n": 1348}, {"cod": 4044, "nombre": "Altara SPS", "zona": "NORTE", "venta2026": 15333476, "conv2026": 0.3835, "conv2025": 0.5283, "delta": -0.1447, "n": 956}, {"cod": 4022, "nombre": "Santa Rosa", "zona": "OCCIDENTE", "venta2026": 17711964, "conv2026": 0.4915, "conv2025": 0.6192, "delta": -0.1277, "n": 1489}, {"cod": 4215, "nombre": "Comayagua San Miguel", "zona": "CENTRO", "venta2026": 10050672, "conv2026": 0.4115, "conv2025": 0.5697, "delta": -0.1582, "n": 872}, {"cod": 4218, "nombre": "Choluteca 3", "zona": "SUR", "venta2026": 9679236, "conv2026": 0.4744, "conv2025": 0.6316, "delta": -0.1572, "n": 849}, {"cod": 4041, "nombre": "El Progreso", "zona": "NORTE", "venta2026": 9695560, "conv2026": 0.6456, "conv2025": 0.729, "delta": -0.0834, "n": 821}, {"cod": 4021, "nombre": "La Ceiba", "zona": "LITORAL", "venta2026": 13034157, "conv2026": 0.5906, "conv2025": 0.5805, "delta": 0.0101, "n": 1040}, {"cod": 4039, "nombre": "Multiplaza SPS", "zona": "NORTE", "venta2026": 5643918, "conv2026": 0.5219, "conv2025": 0.6528, "delta": -0.1308, "n": 498}, {"cod": 4027, "nombre": "Comayagua", "zona": "CENTRO", "venta2026": 7152380, "conv2026": 0.5701, "conv2025": 0.6073, "delta": -0.0371, "n": 662}, {"cod": 4025, "nombre": "Unimall Danlí", "zona": "ORIENTE", "venta2026": 6386061, "conv2026": 0.6002, "conv2025": 0.662, "delta": -0.0618, "n": 658}, {"cod": 4035, "nombre": "Outlet Molinón Tgu", "zona": "CENTRO", "venta2026": 5811903, "conv2026": 0.3218, "conv2025": 0.3345, "delta": -0.0127, "n": 624}, {"cod": 4216, "nombre": "Danlí Casa Blanca", "zona": "ORIENTE", "venta2026": 5554415, "conv2026": 0.4519, "conv2025": 0.4388, "delta": 0.0131, "n": 512}, {"cod": 4042, "nombre": "City Mall SPS", "zona": "NORTE", "venta2026": 5183637, "conv2026": 0.5865, "conv2025": 0.5703, "delta": 0.0162, "n": 396}, {"cod": 4219, "nombre": "Town Center", "zona": "CENTRO", "venta2026": 7337053, "conv2026": 0.5016, "conv2025": null, "delta": null, "n": 601}, {"cod": 4227, "nombre": "Kennedy", "zona": "CENTRO", "venta2026": 3720161, "conv2026": 0.4175, "conv2025": null, "delta": null, "n": 360}, {"cod": 4222, "nombre": "Jardines del Valle", "zona": "NORTE", "venta2026": 2055008, "conv2026": 0.348, "conv2025": null, "delta": null, "n": 138}, {"cod": 4224, "nombre": "La Ceiba Cabotaje", "zona": "LITORAL", "venta2026": 1718311, "conv2026": 0.5056, "conv2025": null, "delta": null, "n": 135}], "producto": [{"nombre": "Lavadora TL", "venta2026": 55382900, "conv2026": 0.4447, "conv2025": 0.4902, "delta": -0.0454}, {"nombre": "Refrigeradora SBS", "venta2026": 51014694, "conv2026": 0.4765, "conv2025": 0.4983, "delta": -0.0218}, {"nombre": "Refrigeradora TM", "venta2026": 49486736, "conv2026": 0.4577, "conv2025": 0.5161, "delta": -0.0583}, {"nombre": "Estufa Gas", "venta2026": 36495172, "conv2026": 0.4685, "conv2025": 0.5227, "delta": -0.0542}, {"nombre": "Estufa Eléctrica", "venta2026": 32975340, "conv2026": 0.3897, "conv2025": 0.4372, "delta": -0.0475}, {"nombre": "Refrigeradora FD", "venta2026": 29798561, "conv2026": 0.4431, "conv2025": 0.4925, "delta": -0.0495}, {"nombre": "Lavadora FL", "venta2026": 23991276, "conv2026": 0.3303, "conv2025": 0.426, "delta": -0.0957}, {"nombre": "A/C ≤12 BTU", "venta2026": 21115760, "conv2026": 0.5087, "conv2025": 0.5677, "delta": -0.059}, {"nombre": "Microondas", "venta2026": 16105643, "conv2026": 0.2897, "conv2025": 0.3318, "delta": -0.0421}, {"nombre": "Secadora", "venta2026": 11148124, "conv2026": 0.3436, "conv2025": 0.4157, "delta": -0.0721}, {"nombre": "Congeladores", "venta2026": 11976957, "conv2026": 0.5637, "conv2025": 0.5962, "delta": -0.0325}, {"nombre": "Dispensadores", "venta2026": 10751292, "conv2026": 0.3192, "conv2025": 0.3559, "delta": -0.0366}], "canasta": [{"n": 1, "ventas": 81277, "ticket": 10573, "conv": 0.4883}, {"n": 2, "ventas": 14753, "ticket": 18782, "conv": 0.5696}, {"n": 3, "ventas": 2143, "ticket": 34321, "conv": 0.5198}, {"n": 4, "ventas": 816, "ticket": 51217, "conv": 0.4696}, {"n": 5, "ventas": 257, "ticket": 73112, "conv": 0.4098}, {"n": 6, "ventas": 92, "ticket": 87639, "conv": 0.4271}], "fidelizacion": {"n_recurrente": 19793, "n_unico": 53886, "pct_recurrente": 0.2686, "venta_recurrente": 730678210, "venta_unico": 664041653, "pct_venta_recurrente": 0.5239, "ticket_recurrente": 13983, "ticket_unico": 12323, "pct_credito_recurrente": 0.5055, "pct_credito_unico": 0.3917, "mora_recurrente": 10.95, "mora_unico": 20.84, "incidencia_recurrente": 0.0763, "incidencia_unico": 0.1236, "mediana_dias": 116, "pct_recompra_1anio": 0.7799, "multicanal": 4463, "pct_recurrente_multicanal": 0.2255}, "totales": {"venta_total": 1394719863, "venta_financiada": 651645546, "conv_total": 0.4672, "n_ventas": 106140, "n_clientes": 73679}};
+
+  var MODEL_COLOR = { "pos": "var(--good)", "neg": "var(--risk)" };
+
+  function fmtL(n){ return "L." + Math.round(n).toLocaleString("es-HN"); }
+  function fmtLcompact(n){
+    if (Math.abs(n) >= 1000000) return "L." + (n/1000000).toFixed(1) + "M";
+    if (Math.abs(n) >= 1000) return "L." + (n/1000).toFixed(0) + "k";
+    return "L." + Math.round(n);
+  }
+  function fmtLaxis(n){
+    if (n >= 1000000) return (n/1000000).toFixed(0) + "M";
+    if (n >= 1000) return (n/1000).toFixed(0) + "k";
+    return "L.0";
+  }
+  function fmtPct(x, d){ d = d===undefined?1:d; return (x*100).toFixed(d) + "%"; }
+  function fmtPtsDelta(x){ var v=x*100; return (v>=0?"+":"") + v.toFixed(1) + " pts"; }
+  function fmtPctDelta(x){ var v=x*100; return (v>=0?"+":"") + v.toFixed(0) + "%"; }
+  function fmtN(n){ return Math.round(n).toLocaleString("es-HN"); }
+  function zonaLabel(z){ return z==="TODAS" ? "Todas" : z.charAt(0)+z.slice(1).toLowerCase(); }
+
+  var state = { zona: "TODAS" };
+
+  var filterEl = document.getElementById("zonaFilter");
+  var zonaOptions = ["TODAS"].concat(COMBINED.zonas);
+  zonaOptions.forEach(function(z){
+    var btn = document.createElement("button");
+    btn.className = "seg-btn"; btn.type = "button";
+    btn.textContent = zonaLabel(z);
+    btn.setAttribute("aria-pressed", z === state.zona ? "true" : "false");
+    btn.addEventListener("click", function(){
+      state.zona = z;
+      Array.prototype.forEach.call(filterEl.children, function(c){ c.setAttribute("aria-pressed", c===btn ? "true":"false"); });
+      render();
+    });
+    filterEl.appendChild(btn);
+  });
+
+  // ---------------- KPI strip ----------------
+  var kpiStrip = document.getElementById("kpiStrip");
+  var KPI_DEFS = [
+    { label:"Ventas Ene-Ago 2026", fmt:function(k){ return fmtN(k.n_ventas); }, sub:function(k){ return (k.delta_n_ventas==null?"—":fmtPctDelta(k.delta_n_ventas)+" vs. 2025"); }, cls:function(k){ return k.delta_n_ventas>0 ? "ok" : ""; } },
+    { label:"Venta total Ene-Ago 2026", fmt:function(k){ return fmtLcompact(k.venta_total); }, sub:function(k){ return fmtL(k.venta_total); } },
+    { label:"Venta financiada Ene-Ago 2026", fmt:function(k){ return fmtLcompact(k.venta_financiada); }, sub:function(k){ return fmtL(k.venta_financiada); } },
+    { label:"% Conversión a crédito", fmt:function(k){ return fmtPct(k.pct_conversion); }, sub:function(k){ return fmtPtsDelta(k.delta_conversion) + " vs. 2025"; }, warn:true },
+    { label:"Ticket promedio por venta", fmt:function(k){ return fmtL(k.ticket_promedio); }, sub:function(k){ return "Ene-Ago 2026"; } }
+  ];
+  function renderKpis(k){
+    kpiStrip.innerHTML = "";
+    KPI_DEFS.forEach(function(def){
+      var tile = document.createElement("div");
+      tile.className = "kpi";
+      var subcls = def.warn ? "warn" : (def.cls ? def.cls(k) : "");
+      tile.innerHTML =
+        '<div class="klabel">' + def.label + '</div>' +
+        '<div class="kval num">' + def.fmt(k) + '</div>' +
+        '<div class="ksub num' + (subcls ? ' '+subcls : '') + '">' + def.sub(k) + '</div>';
+      kpiStrip.appendChild(tile);
+    });
+  }
+
+  // ---------------- narrative dynamic stats ----------------
+  function renderNarrativeStats(zona){
+    var g = document.getElementById("goodZoneStat");
+    var r = document.getElementById("riskZoneStat");
+    if (zona === "TODAS"){
+      g.innerHTML = 'A nivel cartera: venta Ene-Ago pasó de <b>L.225.6M</b> (2024) a <b>L.373.5M</b> (2026), +65.6%.';
+      r.innerHTML = 'Las 3 tiendas de mayor volumen (Próceres SPS, Boulevard, Multiplaza Tgu) tienen conversión de <b>27-35%</b>, muy por debajo del promedio.';
+    } else {
+      var zd = COMBINED.zonaData[zona];
+      var conv = zd.convyr;
+      var last = conv[conv.length-1], prev = conv[conv.length-2];
+      var growth = prev.venta_total>0 ? (last.venta_total/prev.venta_total - 1) : null;
+      g.innerHTML = 'En ' + zonaLabel(zona).toUpperCase() + ': venta Ene-Ago pasó de <b>' + fmtLcompact(prev.venta_total) + '</b> (' + prev.anio + ') a <b>' + fmtLcompact(last.venta_total) + '</b> (' + last.anio + ')' + (growth!==null ? ', ' + fmtPctDelta(growth) : '') + '.';
+      r.innerHTML = 'En ' + zonaLabel(zona).toUpperCase() + ': conversión Ene-Ago ' + last.anio + ' de <b>' + fmtPct(last.pct_conversion) + '</b>, ' + fmtPtsDelta(zd.kpis.delta_conversion) + ' vs. ' + prev.anio + '.';
+    }
+  }
+
+  var svgNS = "http://www.w3.org/2000/svg";
+  function el(tag, attrs){ var e = document.createElementNS(svgNS, tag); for (var k in attrs) e.setAttribute(k, attrs[k]); return e; }
+
+  // ---------------- conversión a crédito por año (línea única) ----------------
+  var chartConv = document.getElementById("chartConv");
+  var ttConv = document.getElementById("ttConv");
+  var holderConv = document.getElementById("chartConvHolder");
+
+  function renderConvChart(rows){
+    chartConv.innerHTML = "";
+    var W=480,H=220, padL=34,padR=14,padT=18,padB=28;
+    var plotW=W-padL-padR, plotH=H-padT-padB;
+    var n=rows.length, slot=plotW/n;
+    function yFor(pct){ return padT + plotH*(1-pct); }
+    [0,0.25,0.5,0.75,1].forEach(function(g){
+      var y=yFor(g);
+      chartConv.appendChild(el("line",{x1:padL,x2:W-padR,y1:y,y2:y,class:"grid-line"}));
+      var t=el("text",{x:padL-6,y:y+3,class:"axis-label","text-anchor":"end"}); t.textContent=Math.round(g*100)+"%";
+      chartConv.appendChild(t);
+    });
+    var points = rows.map(function(r,i){ return {x: padL+slot*i+slot/2, y: yFor(r.pct_conversion), row:r}; });
+    rows.forEach(function(r,i){
+      var cx=padL+slot*i+slot/2;
+      var yl=el("text",{x:cx,y:padT+plotH+18,class:"cat-year","text-anchor":"middle"});
+      yl.textContent = r.anio + (r.anio===2026?"*":"");
+      chartConv.appendChild(yl);
+    });
+    var hoverLine = el("line",{x1:0,x2:0,y1:padT,y2:padT+plotH,class:"hoverline"});
+    chartConv.appendChild(hoverLine);
+    var d = points.map(function(p,i){ return (i===0?"M":"L")+p.x.toFixed(1)+","+p.y.toFixed(1); }).join(" ");
+    chartConv.appendChild(el("path",{d:d,class:"conv-line"}));
+    points.forEach(function(p){
+      chartConv.appendChild(el("circle",{cx:p.x,cy:p.y,r:4.5,class:"conv-dot"}));
+      var lbl=el("text",{x:p.x,y:p.y-10,class:"conv-val","text-anchor":"middle"}); lbl.textContent=fmtPct(p.row.pct_conversion,1);
+      chartConv.appendChild(lbl);
+    });
+    points.forEach(function(p,i){
+      var hit=el("rect",{x:padL+slot*i,y:padT,width:slot,height:plotH,fill:"transparent",style:"cursor:pointer"});
+      hit.addEventListener("mousemove", function(evt){ showTooltipConv(evt,p); });
+      hit.addEventListener("mouseenter", function(evt){ hoverLine.setAttribute("x1",p.x); hoverLine.setAttribute("x2",p.x); hoverLine.style.opacity=1; showTooltipConv(evt,p); });
+      hit.addEventListener("mouseleave", function(){ hoverLine.style.opacity=0; ttConv.style.opacity=0; });
+      chartConv.appendChild(hit);
+    });
+  }
+  function showTooltipConv(evt,p){
+    var r=p.row, isPartial = r.anio===2026;
+    ttConv.innerHTML = "<b>Ene-Ago "+r.anio+"</b>"+(isPartial?" (parcial)":"")+"<br>"+fmtN(r.n_credito)+" de "+fmtN(r.n_ventas)+" ventas a crédito<br><b>"+fmtPct(r.pct_conversion,1)+"</b> de conversión";
+    var box = holderConv.getBoundingClientRect();
+    ttConv.style.left=(evt.clientX-box.left)+"px"; ttConv.style.top=(evt.clientY-box.top-14)+"px"; ttConv.style.opacity=1;
+  }
+
+  // ---------------- venta total vs. venta a crédito ----------------
+  var chartVenta = document.getElementById("chartVenta");
+  var ttVenta = document.getElementById("ttVenta");
+  var holderVenta = document.getElementById("chartVentaHolder");
+
+  function renderVentaChart(rows){
+    chartVenta.innerHTML = "";
+    var W=480,H=220, padL=40,padR=14,padT=18,padB=28;
+    var plotW=W-padL-padR, plotH=H-padT-padB;
+    var n=rows.length, slot=plotW/n;
+    var maxV = Math.max.apply(null, rows.map(function(r){ return r.venta_total; })) * 1.15;
+    function yFor(v){ return padT + plotH*(1-v/maxV); }
+    [0,0.25,0.5,0.75,1].forEach(function(g){
+      var y=padT+plotH*(1-g);
+      chartVenta.appendChild(el("line",{x1:padL,x2:W-padR,y1:y,y2:y,class:"grid-line"}));
+      var t=el("text",{x:padL-6,y:y+3,class:"axis-label","text-anchor":"end"}); t.textContent = g===0?"L.0":fmtLaxis(maxV*g);
+      chartVenta.appendChild(t);
+    });
+    var ptsTotal = rows.map(function(r,i){ return {x:padL+slot*i+slot/2, y:yFor(r.venta_total), row:r}; });
+    var ptsCred = rows.map(function(r,i){ return {x:padL+slot*i+slot/2, y:yFor(r.venta_credito), row:r}; });
+    rows.forEach(function(r,i){
+      var cx=padL+slot*i+slot/2;
+      var yl=el("text",{x:cx,y:padT+plotH+18,class:"cat-year","text-anchor":"middle"}); yl.textContent=r.anio+(r.anio===2026?"*":"");
+      chartVenta.appendChild(yl);
+    });
+    var hoverLine = el("line",{x1:0,x2:0,y1:padT,y2:padT+plotH,class:"hoverline"});
+    chartVenta.appendChild(hoverLine);
+    var dT = ptsTotal.map(function(p,i){ return (i===0?"M":"L")+p.x.toFixed(1)+","+p.y.toFixed(1); }).join(" ");
+    chartVenta.appendChild(el("path",{d:dT,class:"venta-total-line"}));
+    var dC = ptsCred.map(function(p,i){ return (i===0?"M":"L")+p.x.toFixed(1)+","+p.y.toFixed(1); }).join(" ");
+    chartVenta.appendChild(el("path",{d:dC,class:"venta-credito-line"}));
+    ptsTotal.forEach(function(p){ chartVenta.appendChild(el("circle",{cx:p.x,cy:p.y,r:4,class:"venta-total-dot"})); });
+    ptsCred.forEach(function(p){ chartVenta.appendChild(el("circle",{cx:p.x,cy:p.y,r:4,class:"venta-credito-dot"})); });
+    ptsTotal.forEach(function(p,i){
+      var hit=el("rect",{x:padL+slot*i,y:padT,width:slot,height:plotH,fill:"transparent",style:"cursor:pointer"});
+      hit.addEventListener("mousemove", function(evt){ showTooltipVenta(evt,p.row); });
+      hit.addEventListener("mouseenter", function(evt){ hoverLine.setAttribute("x1",p.x); hoverLine.setAttribute("x2",p.x); hoverLine.style.opacity=1; showTooltipVenta(evt,p.row); });
+      hit.addEventListener("mouseleave", function(){ hoverLine.style.opacity=0; ttVenta.style.opacity=0; });
+      chartVenta.appendChild(hit);
+    });
+  }
+  function showTooltipVenta(evt,r){
+    var isPartial = r.anio===2026;
+    ttVenta.innerHTML = "<b>Ene-Ago "+r.anio+"</b>"+(isPartial?" (parcial)":"")+"<br>Venta total: <b>"+fmtL(r.venta_total)+"</b><br>Venta a crédito: <b>"+fmtL(r.venta_credito)+"</b> ("+fmtPct(r.venta_credito/r.venta_total,0)+")";
+    var box = holderVenta.getBoundingClientRect();
+    ttVenta.style.left=(evt.clientX-box.left)+"px"; ttVenta.style.top=(evt.clientY-box.top-14)+"px"; ttVenta.style.opacity=1;
+  }
+
+  // ---------------- volumen de ventas por año ----------------
+  var chartVol = document.getElementById("chartVol");
+  var ttVol = document.getElementById("ttVol");
+  var holderVol = document.getElementById("chartVolHolder");
+
+  function renderVolChart(rows){
+    chartVol.innerHTML = "";
+    var W=980,H=150, padL=40,padR=14,padT=10,padB=22;
+    var plotW=W-padL-padR, plotH=H-padT-padB;
+    var n=rows.length, slot=plotW/n;
+    var barW = Math.min(70, slot*0.5);
+    var maxV = Math.max.apply(null, rows.map(function(r){ return r.ventas; })) * 1.12;
+    [0,0.5,1].forEach(function(g){ var y=padT+plotH*(1-g); chartVol.appendChild(el("line",{x1:padL,x2:W-padR,y1:y,y2:y,class:"grid-line"})); });
+    rows.forEach(function(r,i){
+      var cx = padL+slot*i+slot/2;
+      var bh = maxV>0 ? (plotH*r.ventas/maxV) : 0;
+      var by = padT+plotH-bh, bx = cx-barW/2;
+      var isPartial = r.anio===2026;
+      chartVol.appendChild(el("rect",{x:bx,y:by,width:barW,height:Math.max(bh,1),rx:3,fill:"var(--accent)",opacity:isPartial?0.55:1}));
+      var lbl=el("text",{x:cx,y:by-6,class:"aun-val","text-anchor":"middle"}); lbl.textContent=fmtN(r.ventas);
+      chartVol.appendChild(lbl);
+      var yl=el("text",{x:cx,y:padT+plotH+16,class:"cat-year","text-anchor":"middle"}); yl.textContent=r.anio+(isPartial?"*":"");
+      chartVol.appendChild(yl);
+      var hit=el("rect",{x:padL+slot*i,y:padT,width:slot,height:plotH,fill:"transparent",style:"cursor:pointer"});
+      hit.addEventListener("mousemove", function(evt){ showTooltipVol(evt,r,isPartial); });
+      hit.addEventListener("mouseleave", function(){ ttVol.style.opacity=0; });
+      chartVol.appendChild(hit);
+    });
+  }
+  function showTooltipVol(evt,r,isPartial){
+    ttVol.innerHTML = "<b>"+r.anio+"</b>"+(isPartial?" (parcial, a ago-2026)":"")+"<br>"+fmtN(r.ventas)+" ventas";
+    var box = holderVol.getBoundingClientRect();
+    ttVol.style.left=(evt.clientX-box.left)+"px"; ttVol.style.top=(evt.clientY-box.top-14)+"px"; ttVol.style.opacity=1;
+  }
+
+  // ---------------- volumen mensual (44 meses) ----------------
+  var MES_NOMBRES = ["ene","feb","mar","abr","may","jun","jul","ago","sep","oct","nov","dic"];
+  var chartMes = document.getElementById("chartMes");
+  var ttMes = document.getElementById("ttMes");
+  var holderMes = document.getElementById("chartMesHolder");
+
+  function renderMesChart(rows){
+    chartMes.innerHTML = "";
+    var W=980,H=150, padL=30,padR=10,padT=10,padB=20;
+    var plotW=W-padL-padR, plotH=H-padT-padB;
+    var n=rows.length, slot=plotW/n, barW=Math.max(slot*0.62,2);
+    var maxV = Math.max.apply(null, rows.map(function(r){ return r.ventas; })) * 1.1;
+    [0,0.5,1].forEach(function(g){ var y=padT+plotH*(1-g); chartMes.appendChild(el("line",{x1:padL,x2:W-padR,y1:y,y2:y,class:"grid-line"})); });
+    rows.forEach(function(r,i){
+      var mesNum = parseInt(r.periodo.slice(5,7),10);
+      var anio = r.periodo.slice(0,4);
+      var cx = padL+slot*i+slot/2;
+      var bh = maxV>0 ? (plotH*r.ventas/maxV) : 0;
+      var by = padT+plotH-bh, bx = cx-barW/2;
+      var isPeak = (mesNum===5 || mesNum===12);
+      var isLow = (mesNum===2);
+      var fill = isPeak ? "var(--good)" : (isLow ? "var(--risk)" : "var(--accent)");
+      var op = (isPeak||isLow) ? 1 : 0.72;
+      chartMes.appendChild(el("rect",{x:bx,y:by,width:barW,height:Math.max(bh,1),rx:1.5,fill:fill,opacity:op}));
+      if (mesNum===1){
+        var yl=el("text",{x:cx-slot*0.5,y:padT+plotH+15,class:"cat-year","text-anchor":"start"}); yl.textContent=anio;
+        chartMes.appendChild(yl);
+        chartMes.appendChild(el("line",{x1:cx-slot*0.5,x2:cx-slot*0.5,y1:padT,y2:padT+plotH,class:"grid-line",opacity:0.5}));
+      }
+      var hit=el("rect",{x:padL+slot*i,y:padT,width:slot,height:plotH,fill:"transparent",style:"cursor:pointer"});
+      hit.addEventListener("mousemove", function(evt){ showTooltipMes(evt,r,mesNum); });
+      hit.addEventListener("mouseleave", function(){ ttMes.style.opacity=0; });
+      chartMes.appendChild(hit);
+    });
+  }
+  function showTooltipMes(evt,r,mesNum){
+    var tag = mesNum===5 ? " — pico consistente" : (mesNum===12 ? " — pico de fin de año" : (mesNum===2 ? " — mes más bajo" : ""));
+    ttMes.innerHTML = "<b>"+MES_NOMBRES[mesNum-1]+"-"+r.periodo.slice(0,4)+"</b><br>"+fmtN(r.ventas)+" ventas"+tag;
+    var box = holderMes.getBoundingClientRect();
+    ttMes.style.left=(evt.clientX-box.left)+"px"; ttMes.style.top=(evt.clientY-box.top-14)+"px"; ttMes.style.opacity=1;
+  }
+
+  // ---------------- tienda bars (filtrable por zona) ----------------
+  var big3 = ["Próceres SPS","Boulevard","Multiplaza Tegucigalpa"];
+  function renderTiendaBars(zona){
+    var host = document.getElementById("tiendaBars");
+    var rows = COMBINED.tiendas.filter(function(t){ return zona==="TODAS" || t.zona===zona; });
+    rows = rows.slice().sort(function(a,b){ return b.venta2026-a.venta2026; }).slice(0,12);
+    var maxV = Math.max.apply(null, rows.map(function(t){ return t.conv2026; })) * 1.15 || 0.7;
+    host.innerHTML = "";
+    rows.forEach(function(t){
+      var row = document.createElement("div"); row.className = "tbar-row";
+      var color = big3.indexOf(t.nombre)>=0 ? "var(--risk)" : "var(--accent)";
+      var mark = (t.conv2025!=null) ? '<div class="tbar-mark" style="left:'+(100*t.conv2025/maxV).toFixed(1)+'%"></div>' : '';
+      row.innerHTML =
+        '<div class="tbar-name">'+t.nombre+' <span class="tbar-zona">· '+zonaLabel(t.zona)+'</span></div>' +
+        '<div class="tbar-track"><div class="tbar-fill" style="width:'+(100*t.conv2026/maxV).toFixed(1)+'%; background:'+color+'"></div>'+mark+'</div>' +
+        '<div class="tbar-val num">'+fmtPct(t.conv2026,0)+' · '+fmtLcompact(t.venta2026)+'</div>';
+      host.appendChild(row);
+    });
+  }
+
+  // ---------------- producto bars (fijo, no cambia con zona) ----------------
+  function renderProdBars(){
+    var host = document.getElementById("prodBars");
+    var maxV = Math.max.apply(null, COMBINED.producto.map(function(p){ return p.conv2026; })) * 1.15;
+    host.innerHTML = "";
+    COMBINED.producto.forEach(function(p){
+      var row = document.createElement("div"); row.className = "tbar-row";
+      row.innerHTML =
+        '<div class="tbar-name">'+p.nombre+'</div>' +
+        '<div class="tbar-track"><div class="tbar-fill" style="width:'+(100*p.conv2026/maxV).toFixed(1)+'%; background:var(--accent)"></div><div class="tbar-mark" style="left:'+(100*p.conv2025/maxV).toFixed(1)+'%"></div></div>' +
+        '<div class="tbar-val num">'+fmtPct(p.conv2026,0)+'</div>';
+      host.appendChild(row);
+    });
+  }
+
+  // ---------------- canasta bars ----------------
+  function renderCanastaBars(){
+    var host = document.getElementById("canastaBars");
+    var maxV = Math.max.apply(null, COMBINED.canasta.map(function(c){ return c.conv; })) * 1.15;
+    host.innerHTML = "";
+    COMBINED.canasta.forEach(function(c){
+      var row = document.createElement("div"); row.className = "tbar-row";
+      row.innerHTML =
+        '<div class="tbar-name">'+c.n+' producto'+(c.n>1?'s':'')+'</div>' +
+        '<div class="tbar-track"><div class="tbar-fill" style="width:'+(100*c.conv/maxV).toFixed(1)+'%; background:var(--accent)"></div></div>' +
+        '<div class="tbar-val num">'+fmtPct(c.conv,0)+' · L.'+Math.round(c.ticket/1000)+'k tkt.</div>';
+      host.appendChild(row);
+    });
+  }
+
+  // ---------------- fidelización table ----------------
+  function renderFidTable(){
+    var f = COMBINED.fidelizacion;
+    var host = document.getElementById("fidTable");
+    host.innerHTML =
+      '<thead><tr><th>Segmento</th><th># Clientes</th><th>% Venta</th><th>Ticket prom.</th><th>% en crédito</th><th>Mora prom.</th><th>% con mora&gt;0</th></tr></thead>' +
+      '<tbody>' +
+      '<tr><td>Recurrente (2+ compras)</td><td>'+fmtN(f.n_recurrente)+' ('+fmtPct(f.pct_recurrente,0)+')</td><td><b style="color:var(--good)">'+fmtPct(f.pct_venta_recurrente,1)+'</b></td><td>'+fmtL(f.ticket_recurrente)+'</td><td><b style="color:var(--good)">'+fmtPct(f.pct_credito_recurrente,1)+'</b></td><td>'+f.mora_recurrente.toFixed(1)+'</td><td><b style="color:var(--good)">'+fmtPct(f.incidencia_recurrente,1)+'</b></td></tr>' +
+      '<tr><td>Una sola compra</td><td>'+fmtN(f.n_unico)+' ('+fmtPct(1-f.pct_recurrente,0)+')</td><td>'+fmtPct(1-f.pct_venta_recurrente,1)+'</td><td>'+fmtL(f.ticket_unico)+'</td><td>'+fmtPct(f.pct_credito_unico,1)+'</td><td><b style="color:var(--risk)">'+f.mora_unico.toFixed(1)+'</b></td><td><b style="color:var(--risk)">'+fmtPct(f.incidencia_unico,1)+'</b></td></tr>' +
+      '</tbody>';
+  }
+
+  // ---------------- cobertura table ----------------
+  function renderCoberturaTable(){
+    var host = document.getElementById("coberturaTable");
+    var rows = COMBINED.cobertura.slice().sort(function(a,b){ return b.ventas_por_tienda - a.ventas_por_tienda; });
+    var maxPT = rows[0].ventas_por_tienda, minPT = rows[rows.length-1].ventas_por_tienda;
+    host.innerHTML =
+      '<thead><tr><th>Zona</th><th>Tiendas</th><th>Ventas (Ene-Ago 2026)</th><th>Venta (L.)</th><th>Ventas / tienda</th></tr></thead>' +
+      '<tbody>' + rows.map(function(r){
+        var hi = r.ventas_por_tienda===maxPT, lo = r.ventas_por_tienda===minPT;
+        var val = fmtN(Math.round(r.ventas_por_tienda));
+        if (hi) val = '<b style="color:var(--good)">'+val+'</b>';
+        if (lo) val = '<b style="color:var(--risk)">'+val+'</b>';
+        return '<tr><td>'+r.zona+'</td><td>'+r.tiendas+'</td><td>'+fmtN(r.ventas)+'</td><td>'+fmtL(r.venta_monto)+'</td><td>'+val+'</td></tr>';
+      }).join("") + '</tbody>';
+  }
+
+  // ---------------- master render ----------------
+  function render(){
+    var zd = COMBINED.zonaData[state.zona];
+    renderKpis(zd.kpis);
+    renderNarrativeStats(state.zona);
+    renderConvChart(zd.convyr);
+    renderVentaChart(zd.convyr);
+    renderVolChart(zd.volumen);
+    renderTiendaBars(state.zona);
+  }
+
+  renderMesChart(COMBINED.mesSerie);
+  renderProdBars();
+  renderCanastaBars();
+  renderFidTable();
+  renderCoberturaTable();
+  render();
+
+  window.addEventListener("resize", render);
+})();
+</script>
+
+</body>
+</html>
