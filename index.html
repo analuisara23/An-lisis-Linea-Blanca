@@ -348,7 +348,7 @@
         <div class="panel-head">
           <div>
             <h3>Conversión por tienda <span class="scope-badge" data-scope-badge></span></h3>
-            <div class="phint">Ene-Ago 2026, ordenadas por venta. Las 3 de mayor volumen (marca roja = conversión 2025 de referencia) concentran ≈30% de toda la venta y tienen la conversión más baja.</div>
+            <div class="phint">Ene-Ago 2026, ordenadas por venta. En rojo, las 3 de mayor volumen: en Retail concentran ≈24% de la venta, y Boulevard es la más rezagada (57%). La marca vertical es la conversión 2025 de referencia.</div>
           </div>
         </div>
         <div id="tiendaBars"></div>
@@ -412,7 +412,7 @@
         </div>
       </div>
       <div class="ticket-callout" style="margin-top:14px;">
-        <b>El estatus es dinámico, no una etiqueta fija:</b> 1,757 clientes (2.6% de la base) cambiaron de clasificación dentro de su propia historia. La transición más común es Potencial → Activo (741 clientes — la conversión que ya está ocurriendo), pero la segunda más común es Activo → Inactivo (573 clientes) — casi tantos clientes se activan como los que se apagan. El segmento más grande después de Activo es el <b>Potencial sin perfil de crédito</b>: 23,547 clientes (34.7% de la base) con L.366.3M de venta histórica, todo de contado. Junto con los 3,776 Potenciales Retail y los 5,087 Inactivos suman 47.8% de la base — es la oportunidad de captación más concreta, porque ya viene identificada por el propio sistema de crédito.
+        <b>El estatus es dinámico, no una etiqueta fija:</b> 1,757 clientes (2.6% de la base) cambiaron de clasificación dentro de su propia historia. La transición más común es Potencial → Activo (741 clientes — la conversión que ya está ocurriendo), pero la segunda más común es Activo → Inactivo (573 clientes). Sumando también a los 304 Inactivos que volvieron a activarse, por cada cliente que se apaga casi dos se activan: la activación ocurre, pero se pierde una parte de lo ganado. El segmento más grande después de Activo es el <b>Potencial sin perfil de crédito</b>: 23,547 clientes (34.7% de la base) con L.366.3M de venta histórica, todo de contado. Junto con los 3,776 Potenciales Retail y los 5,087 Inactivos suman 47.8% de la base — es la oportunidad de captación más concreta, porque ya viene identificada por el propio sistema de crédito.
       </div>
     </section>
 
@@ -818,6 +818,7 @@
   function renderTiendaBars(zona, scope){
     var host = document.getElementById("tiendaBars");
     var src = scope==="total" ? COMBINED.tiendasTotal : COMBINED.tiendas;
+    big3 = src.slice().sort(function(a,b){ return b.venta2026-a.venta2026; }).slice(0,3).map(function(t){ return t.nombre; });
     var rows = src.filter(function(t){ return zona==="TODAS" || t.zona===zona; });
     rows = rows.slice().sort(function(a,b){ return b.venta2026-a.venta2026; }).slice(0,12);
     var maxV = Math.max.apply(null, rows.map(function(t){ return t.conv2026; })) * 1.15 || 0.7;
@@ -1043,7 +1044,7 @@
       zoneCallout.innerHTML = '<b>CENTRO concentra la mayor oportunidad:</b> L.156.9M en venta Ene-Ago 2026 (48% del total), convirtiendo a 42.6% —17.4 puntos por debajo de la meta de 60%— y cayendo 2.4 puntos vs. 2025. SUR y OCCIDENTE le siguen por el deterioro más fuerte de las 6 zonas (-14.4 y -13.3 puntos), aunque con volumen mucho menor (8% y 5%). NORTE es la segunda zona en volumen (32%) y convierte a 49.8% (-5.4 puntos). LITORAL es la única en la meta (60.3%, estable). Ojo: la brecha contra el 60% se explica en buena parte por la venta de contado de los Potenciales sin perfil de crédito — dentro de Retail las 6 zonas ya superan la meta.';
     } else {
       zoneNote.innerHTML = 'Alcance: <b>segmento Retail</b> (base de este análisis) — con la conversión ya por encima del 60% en las 6 zonas, aquí el ranking no mide "distancia a la meta" sino <b>margen de seguridad sobre la meta</b> y <b>velocidad de deterioro</b>: dónde una caída adicional pondría en riesgo lo ya ganado. Ranking por score combinado: 40% margen vs. meta de 60%, 35% tendencia interanual, 25% volumen de venta. Ene-Ago 2026 vs. Ene-Ago 2025, no cambia con el filtro de zona de arriba (sí con el de Alcance).';
-      zoneCallout.innerHTML = '<b>CENTRO concentra la mayor atención, aunque no incumple la meta:</b> convierte a 66.4% —apenas +6.4 puntos sobre el 60%, el margen más estrecho de las 6 zonas— y concentra 45% del volumen Retail (L.100.6M Ene-Ago 2026); su tendencia es prácticamente plana (+0.1 puntos), pero por su tamaño es donde una caída adicional tendría el mayor impacto en Lempiras financiados. SUR es la segunda prioridad no por su nivel (71.1%, cómodo sobre meta) sino por su deterioro: -8.2 puntos vs. 2025, la caída más pronunciada de las 6 zonas, aunque su volumen es menor (9% de la cartera Retail). OCCIDENTE muestra un patrón similar en menor escala (-6.4 puntos). NORTE, ORIENTE y LITORAL mantienen el margen más amplio sobre la meta (14-17 puntos) — no son prioridad inmediata, aunque NORTE vale la pena monitorear por su volumen (31% de la cartera Retail).';
+      zoneCallout.innerHTML = '<b>CENTRO concentra la mayor atención, aunque no incumple la meta:</b> convierte a 66.4% —apenas +6.4 puntos sobre el 60%, el margen más estrecho de las 6 zonas— y concentra 45% del volumen Retail (L.100.6M Ene-Ago 2026); su tendencia es prácticamente plana (+0.1 puntos), pero por su tamaño es donde una caída adicional tendría el mayor impacto en Lempiras financiados. SUR es la segunda prioridad no por su nivel (71.1%, cómodo sobre meta) sino por su deterioro: -8.2 puntos vs. 2025, la caída más pronunciada de las 6 zonas, aunque su volumen es menor (9% de la cartera Retail). OCCIDENTE muestra un patrón similar en menor escala (-6.4 puntos). NORTE y LITORAL mantienen el margen más amplio sobre la meta (15-17 puntos) — no son prioridad inmediata, aunque NORTE vale la pena monitorear por su volumen (31% de la cartera Retail).';
     }
   }
 
